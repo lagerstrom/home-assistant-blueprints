@@ -1,8 +1,7 @@
-turn_off_first_floor_lights:
-  alias: Turn off first floor lights
-  icon: mdi:lightbulb-group-off
-  mode: single
-  sequence:
-    - action: light.turn_off
-      target:
-        floor_id: first_floor
+alias: Turn off first floor lights
+icon: mdi:lightbulb-group-off
+mode: single
+sequence:
+  - action: light.turn_off
+    target:
+      floor_id: first_floor
