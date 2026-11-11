@@ -1,17 +1,18 @@
 blueprint:
   name: Z2M IKEA Open/Close Remote - With min max postions
   description: |
-    'Control your roller blind with an IKEA 2 button remote (the square ones).
-    this is the remote that's been delivered by the "Fytur" and " Kadrilj"
-    roller blinds.'
+    Control your roller blind with an IKEA 2 button remote (the square ones).
+    This is the remote that's delivered with the "Fytur" and "Kadrilj"
+    roller blinds. Requires Zigbee2MQTT 2.0+ (uses the remote's action event entity).
   domain: automation
   input:
     remote:
       name: Remote
-      description: IKEA remote to use
+      description: IKEA remote action event entity (e.g. event.<remote>_action)
       selector:
         entity:
-          domain: sensor
+          domain: event
+          integration: mqtt
     cover:
       name: Roller Blind
       description: Roller blind to control
@@ -19,9 +20,9 @@ blueprint:
         target:
           entity:
             domain: cover
-    min_position:
-      name: Minimum Open Position
-      description: The maximum percentage the blind can open (0-100).
+    open_position:
+      name: Open Position
+      description: Position the blind moves to when pressing open (0 = closed, 100 = fully open).
       default: 87
       selector:
         number:
@@ -29,9 +30,9 @@ blueprint:
           max: 100
           mode: slider
           step: 1
-    max_position:
-      name: Maximum Close Position
-      description: The minimum percentage the blind can close (0-100).
+    close_position:
+      name: Close Position
+      description: Position the blind moves to when pressing close (0 = closed, 100 = fully open).
       default: 48
       selector:
         number:
@@ -44,9 +45,10 @@ max_exceeded: silent
 trigger:
   - platform: state
     entity_id: !input remote
+    not_from: unavailable
 action:
   - variables:
-      command: "{{ trigger.to_state.state }}"
+      command: "{{ trigger.to_state.attributes.event_type }}"
   - choose:
       - conditions:
           - condition: template
@@ -55,7 +57,7 @@ action:
           - service: cover.set_cover_position
             target: !input cover
             data:
-              position: !input min_position
+              position: !input open_position
       - conditions:
           - condition: template
             value_template: "{{ command == 'close' }}"
@@ -63,4 +65,4 @@ action:
           - service: cover.set_cover_position
             target: !input cover
             data:
-              position: !input max_position
+              position: !input close_position
