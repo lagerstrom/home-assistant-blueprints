@@ -1,18 +1,21 @@
 blueprint:
-  name: Z2M IKEA Open/Close Remote - With min max postions
+  name: ZHA IKEA Open/Close Remote - With min max postions
   description: |
     Control your roller blind with an IKEA 2 button remote (the square ones).
     This is the remote that's delivered with the "Fytur" and "Kadrilj"
-    roller blinds. Requires Zigbee2MQTT 2.0+ (uses the remote's action event entity).
+    roller blinds. Requires the remote to be paired with ZHA
+    (Zigbee Home Automation).
   domain: automation
   input:
     remote:
       name: Remote
-      description: IKEA remote action event entity (e.g. event.<remote>_action)
+      description: IKEA open/close remote to use
       selector:
-        entity:
-          domain: event
-          integration: mqtt
+        device:
+          filter:
+            - integration: zha
+              manufacturer: IKEA of Sweden
+              model: TRADFRI open/close remote
     cover:
       name: Roller Blind
       description: Roller blind to control
@@ -43,16 +46,17 @@ blueprint:
 mode: single
 max_exceeded: silent
 trigger:
-  - platform: state
-    entity_id: !input remote
-    not_from: unavailable
+  - platform: event
+    event_type: zha_event
+    event_data:
+      device_id: !input remote
 action:
   - variables:
-      command: "{{ trigger.to_state.attributes.event_type }}"
+      command: "{{ trigger.event.data.command }}"
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ command == 'open' }}"
+            value_template: "{{ command == 'up_open' }}"
         sequence:
           - service: cover.set_cover_position
             target: !input cover
@@ -60,7 +64,7 @@ action:
               position: !input open_position
       - conditions:
           - condition: template
-            value_template: "{{ command == 'close' }}"
+            value_template: "{{ command == 'down_close' }}"
         sequence:
           - service: cover.set_cover_position
             target: !input cover
